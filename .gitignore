@@ -3,7 +3,7 @@ dist/
 *.log
 .env
 .env.local
-data/*.db
-data/*.db-journal
+data/
+*.tsbuildinfo
 coverage/
 .DS_Store
