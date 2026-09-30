@@ -1,7 +1,8 @@
 {
   "name": "Childcare Solution",
   "user": "ubuntu",
-  "install": "npm install",
+  "install": "bash .cursor/setup.sh",
+  "start": "bash .cursor/start-db.sh",
   "terminals": [
     {
       "name": "api",
