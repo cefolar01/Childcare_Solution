@@ -1,12 +1,12 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { createApp } from './app.js';
-import { createDatabase } from './db.js';
+import { createStore } from './store.js';
 
-/** Spin up the app on an ephemeral port backed by an in-memory database. */
+/** Spin up the app on an ephemeral port backed by an in-memory store. */
 async function startTestServer() {
-  const db = createDatabase(':memory:');
-  const app = createApp(db);
+  const store = createStore(':memory:');
+  const app = createApp(store);
   const server = app.listen(0);
   await new Promise((r) => server.once('listening', r));
   const { port } = server.address();

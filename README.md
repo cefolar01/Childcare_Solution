@@ -5,7 +5,8 @@ their guardians, and daily attendance (check-in / check-out).
 
 ## Stack
 
-- **server/** — Node.js + Express REST API backed by SQLite (`better-sqlite3`)
+- **server/** — Node.js + Express REST API with a dependency-free JSON-backed
+  data store (no native modules, so `npm install` needs no compiler)
 - **client/** — React + Vite + TypeScript single-page app
 - npm workspaces tie the two together at the repo root
 
@@ -51,8 +52,9 @@ The Vite dev server proxies `/api/*` to the API, so open
 
 ## Data
 
-SQLite database lives at `data/childcare.db` (git-ignored) and is seeded with
-demo children on first run. Set `DB_PATH` or `PORT` to override defaults.
+Data is persisted to a JSON file at `data/childcare.json` (git-ignored) and is
+seeded with demo children on first run. Set `DB_PATH` or `PORT` to override
+defaults.
 
 ## Cloud Agent environment
 
