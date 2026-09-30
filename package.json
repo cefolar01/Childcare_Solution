@@ -14,13 +14,22 @@
     "db:reset": "docker compose down -v && docker compose up -d",
     "dev:server": "npm run dev --workspace server",
     "dev:client": "npm run dev --workspace client",
+    "build": "npm run build --workspace client",
     "build:client": "npm run build --workspace client",
+    "start": "node server/src/index.js",
     "start:server": "npm run start --workspace server",
+    "bg:start": "npm run build && pm2 start ecosystem.config.cjs",
+    "bg:stop": "pm2 stop ecosystem.config.cjs",
+    "bg:restart": "npm run build && pm2 restart ecosystem.config.cjs",
+    "bg:delete": "pm2 delete ecosystem.config.cjs",
+    "bg:logs": "pm2 logs childcare",
+    "bg:status": "pm2 status",
     "test": "npm run test --workspace server",
     "lint": "npm run lint --workspace server && npm run lint --workspace client"
   },
   "devDependencies": {
-    "concurrently": "^9.0.1"
+    "concurrently": "^9.0.1",
+    "pm2": "^5.4.2"
   },
   "engines": {
     "node": ">=20"

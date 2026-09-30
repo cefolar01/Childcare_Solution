@@ -35,6 +35,29 @@ under `data/pglite/` (git-ignored), so it persists across restarts.
 Prefer separate terminals? Run `npm run dev:server` and `npm run dev:client`
 individually instead.
 
+## Running in the background (no terminal window)
+
+To keep the app running after you close the terminal, use the bundled
+[PM2](https://pm2.keymetrics.io/) process manager. This builds the web UI and
+serves it together with the API from a single background process on one port.
+
+```bash
+npm run bg:start    # build + start in the background (http://localhost:3001)
+npm run bg:status   # show process status
+npm run bg:logs     # tail logs
+npm run bg:stop     # stop it
+npm run bg:restart  # rebuild + restart
+npm run bg:delete   # remove it from PM2
+```
+
+Open <http://localhost:3001> — both the UI and the API are served there. The
+process is managed by the PM2 daemon, so it keeps running when the terminal
+closes. To also start it automatically on machine boot, run `pm2 startup` and
+follow the printed instructions, then `pm2 save`.
+
+Use `npm run dev` instead while actively developing (hot reload, API on :3001
+and Vite on :5173). Use `npm run bg:*` when you just want it running.
+
 ## Using a real PostgreSQL server (optional)
 
 Set `DATABASE_URL` and the app uses that server instead of the embedded DB.
@@ -62,6 +85,10 @@ On Windows PowerShell, set it first with
 | `npm run dev` | Start API + web together (one command) |
 | `npm run dev:server` | Start the API in watch mode (port 3001) |
 | `npm run dev:client` | Start the Vite dev server (port 5173) |
+| `npm run bg:start` | Build + run in the background via PM2 (port 3001) |
+| `npm run bg:stop` / `bg:logs` / `bg:status` | Manage the background process |
+| `npm run build` | Build the web UI for the single-process/background mode |
+| `npm start` | Run the built app as one process (API + UI on :3001) |
 | `npm test` | Run the API test suite (PGlite, no DB server needed) |
 | `npm run lint` | Type-check the client and syntax-check the server |
 | `npm run build:client` | Production build of the web app |

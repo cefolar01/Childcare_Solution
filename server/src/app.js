@@ -1,5 +1,7 @@
 import express from 'express';
 import cors from 'cors';
+import { existsSync } from 'node:fs';
+import { join } from 'node:path';
 
 /** Wrap an async route so rejected promises flow to Express error handling. */
 const wrap = (fn) => (req, res, next) => Promise.resolve(fn(req, res, next)).catch(next);
@@ -7,8 +9,11 @@ const wrap = (fn) => (req, res, next) => Promise.resolve(fn(req, res, next)).cat
 /**
  * Build the Express app around a given data store. Kept separate from the
  * server bootstrap so tests can inject a store backed by any Postgres client.
+ *
+ * When `clientDist` points at a built client bundle, the app also serves the
+ * web UI (with SPA fallback) so the whole app runs as a single process.
  */
-export function createApp(store) {
+export function createApp(store, clientDist) {
   const app = express();
   app.use(cors());
   app.use(express.json());
@@ -98,6 +103,15 @@ export function createApp(store) {
       res.json(await store.attendanceToday());
     })
   );
+
+  // Serve the built web UI when available (single-process / background mode).
+  if (clientDist && existsSync(clientDist)) {
+    app.use(express.static(clientDist));
+    app.get('*', (req, res, next) => {
+      if (req.path.startsWith('/api/')) return next();
+      res.sendFile(join(clientDist, 'index.html'));
+    });
+  }
 
   return app;
 }
