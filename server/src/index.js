@@ -15,8 +15,18 @@ async function main() {
   await initDb(db);
 
   const app = createApp(createStore(db), CLIENT_DIST);
-  app.listen(PORT, () => {
+  const server = app.listen(PORT, () => {
     console.log(`Childcare API listening on http://localhost:${PORT}`);
+  });
+  server.on('error', (err) => {
+    if (err.code === 'EADDRINUSE') {
+      console.error(`\n✖ Port ${PORT} is already in use — the app can't start.`);
+      console.error('  Stop the other instance (e.g. "npm run bg:stop" or Ctrl+C in the');
+      console.error(`  other terminal), or start on another port: PORT=3002 npm run dev\n`);
+      process.exit(1);
+    }
+    console.error('Server error:', err);
+    process.exit(1);
   });
 }
 
