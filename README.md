@@ -16,10 +16,12 @@ their guardians, and daily attendance (check-in / check-out).
 ## Getting started
 
 ```bash
-npm install          # installs both workspaces
-npm run dev:server   # API on http://localhost:3001
-npm run dev:client   # web app on http://localhost:5173
+npm install   # installs both workspaces
+npm run dev   # starts the API (:3001) and web app (:5173) together
 ```
+
+Prefer separate terminals? Run `npm run dev:server` and `npm run dev:client`
+individually instead.
 
 The Vite dev server proxies `/api/*` to the API, so open
 <http://localhost:5173> and the roster loads with seeded demo data.
@@ -28,6 +30,7 @@ The Vite dev server proxies `/api/*` to the API, so open
 
 | Command | Description |
 | --- | --- |
+| `npm run dev` | Start API + web together (one command) |
 | `npm run dev:server` | Start the API in watch mode (port 3001) |
 | `npm run dev:client` | Start the Vite dev server (port 5173) |
 | `npm test` | Run the API test suite (`node --test`) |
