@@ -5,59 +5,69 @@ their guardians, and daily attendance (check-in / check-out).
 
 ## Stack
 
-- **server/** — Node.js + Express REST API backed by **PostgreSQL** via the
-  pure-JS `pg` driver (no native modules, so `npm install` needs no compiler)
+- **server/** — Node.js + Express REST API. PostgreSQL for storage, with two
+  interchangeable drivers:
+  - **embedded PGlite** (Postgres compiled to WebAssembly) by default — nothing
+    to install, data persisted on disk
+  - a real **PostgreSQL server** via the pure-JS `pg` driver when `DATABASE_URL`
+    is set (Docker, a hosted database, or production)
 - **client/** — React + Vite + TypeScript single-page app
-- Tests run against **PGlite** (Postgres compiled to WebAssembly), so the test
-  suite needs no database server
 - npm workspaces tie the two together at the repo root
+
+No native modules are involved, so `npm install` needs no compiler on any OS.
 
 ## Prerequisites
 
 - Node.js >= 20 (developed against Node 22)
-- A PostgreSQL database. The easiest path is Docker (Docker Desktop on
-  macOS/Windows) and the bundled `docker-compose.yml`; alternatively point the
-  app at any Postgres instance via `DATABASE_URL`.
+- That's it for local dev — the embedded database needs nothing installed.
 
-## Getting started
+## Getting started (zero setup)
 
 ```bash
-npm install     # installs both workspaces
-npm run db:up   # starts PostgreSQL in Docker (port 5432)
-npm run dev     # starts the API (:3001) and web app (:5173) together
+npm install   # installs both workspaces
+npm run dev   # starts the API (:3001) and web app (:5173) together
 ```
+
+Open <http://localhost:5173>. On first run the API creates its schema and seeds
+demo children automatically. Data is stored in an embedded PostgreSQL database
+under `data/pglite/` (git-ignored), so it persists across restarts.
 
 Prefer separate terminals? Run `npm run dev:server` and `npm run dev:client`
 individually instead.
 
-The API creates its schema and seeds demo children automatically on startup.
-The Vite dev server proxies `/api/*` to the API, so open
-<http://localhost:5173> and the roster loads with seeded demo data.
+## Using a real PostgreSQL server (optional)
 
-Not using Docker? Start your own Postgres and set `DATABASE_URL`, e.g.:
+Set `DATABASE_URL` and the app uses that server instead of the embedded DB.
+
+With the bundled Docker Compose file:
 
 ```bash
-export DATABASE_URL="postgres://user:pass@localhost:5432/childcare"
-npm run dev
+npm run db:up   # starts PostgreSQL 16 in Docker on port 5432
+DATABASE_URL="postgres://childcare:childcare@localhost:5432/childcare" npm run dev
 ```
 
-The default when `DATABASE_URL` is unset is
-`postgres://childcare:childcare@localhost:5432/childcare`, which matches
-`docker-compose.yml`.
+Or point at any hosted Postgres (e.g. Neon, Supabase, RDS):
+
+```bash
+DATABASE_URL="postgres://user:pass@host:5432/dbname" npm run dev
+```
+
+On Windows PowerShell, set it first with
+`$env:DATABASE_URL = "postgres://..."` and then run `npm run dev`.
 
 ## Useful scripts
 
 | Command | Description |
 | --- | --- |
-| `npm run db:up` | Start PostgreSQL in Docker |
-| `npm run db:down` | Stop the database container |
-| `npm run db:reset` | Drop the volume and start a fresh database |
 | `npm run dev` | Start API + web together (one command) |
 | `npm run dev:server` | Start the API in watch mode (port 3001) |
 | `npm run dev:client` | Start the Vite dev server (port 5173) |
-| `npm test` | Run the API test suite on PGlite (no DB server needed) |
+| `npm test` | Run the API test suite (PGlite, no DB server needed) |
 | `npm run lint` | Type-check the client and syntax-check the server |
 | `npm run build:client` | Production build of the web app |
+| `npm run db:up` | Start PostgreSQL in Docker (for the `DATABASE_URL` path) |
+| `npm run db:down` | Stop the database container |
+| `npm run db:reset` | Drop the volume and start a fresh database |
 
 ## API overview
 
@@ -73,14 +83,12 @@ The default when `DATABASE_URL` is unset is
 
 ## Data
 
-Data lives in PostgreSQL. On startup the API applies the schema
-(`children`, `attendance`) if needed and seeds demo children on an empty
-database. Configure the connection with `DATABASE_URL` and the API port with
-`PORT`. The Docker volume `childcare_pgdata` persists data between runs; use
-`npm run db:reset` to start clean.
+The schema (`children`, `attendance`) is applied on startup and demo children
+are seeded into an empty database. Configure storage with `DATABASE_URL`
+(defaults to embedded PGlite at `data/pglite/`) and the API port with `PORT`.
 
 ## Cloud Agent environment
 
-`.cursor/environment.json` provisions a local PostgreSQL server, installs npm
-dependencies, starts the database on boot, and runs the `api` and `web` dev
-servers as persistent terminals.
+`.cursor/environment.json` installs dependencies via `npm install` and starts
+the `api` and `web` dev servers as persistent terminals. It uses the embedded
+database by default, so no database service is required.

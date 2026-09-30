@@ -1,17 +1,11 @@
 import pg from 'pg';
+import { PGlite } from '@electric-sql/pglite';
+import { mkdirSync } from 'node:fs';
+import { dirname, resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
 
+const __dirname = dirname(fileURLToPath(import.meta.url));
 const { Pool } = pg;
-
-export const DEFAULT_DATABASE_URL =
-  'postgres://childcare:childcare@localhost:5432/childcare';
-
-/** Create a pooled Postgres client from DATABASE_URL (or the local default). */
-export function createPool(connectionString = process.env.DATABASE_URL) {
-  return new Pool({
-    connectionString: connectionString || DEFAULT_DATABASE_URL,
-    max: 10,
-  });
-}
 
 const SEED_CHILDREN = [
   ['Ava', 'Nguyen', '2021-04-12', 'Linh Nguyen', '555-0142', 'Sunflowers'],
@@ -20,8 +14,68 @@ const SEED_CHILDREN = [
 ];
 
 /**
- * Create the schema if it does not exist. `db` is any client exposing an
- * async `query(text, params)` method (a pg Pool/Client or a PGlite instance).
+ * Create a database client.
+ *
+ * - If `DATABASE_URL` is set, connect to that PostgreSQL server via the pure-JS
+ *   `pg` driver (use this for Docker, a hosted database, or production).
+ * - Otherwise fall back to an embedded PGlite database (real Postgres compiled
+ *   to WebAssembly) persisted on disk, so local dev needs nothing installed.
+ *
+ * Both clients expose an async `query(text, params)` method, so the rest of the
+ * app is identical regardless of which one is used.
+ */
+export async function createDatabase() {
+  const url = process.env.DATABASE_URL;
+
+  if (url) {
+    const pool = new Pool({ connectionString: url, max: 10 });
+    await waitForPostgres(pool);
+    return {
+      db: pool,
+      driver: `PostgreSQL server (${safeHost(url)})`,
+      close: () => pool.end(),
+    };
+  }
+
+  const dataDir =
+    process.env.PGLITE_DIR || resolve(__dirname, '..', '..', 'data', 'pglite');
+  mkdirSync(dataDir, { recursive: true });
+  const db = new PGlite(dataDir);
+  await db.waitReady;
+  return {
+    db,
+    driver: `embedded PGlite (${dataDir})`,
+    close: () => db.close(),
+  };
+}
+
+/** Retry until the Postgres server accepts connections (it may be starting). */
+async function waitForPostgres(pool, attempts = 30) {
+  for (let i = 1; i <= attempts; i++) {
+    try {
+      await pool.query('SELECT 1');
+      return;
+    } catch (err) {
+      if (i === attempts) throw err;
+      console.log(`Waiting for database… (${i}/${attempts})`);
+      await new Promise((r) => setTimeout(r, 1000));
+    }
+  }
+}
+
+/** Host:port of a connection string, without credentials, for safe logging. */
+function safeHost(url) {
+  try {
+    const u = new URL(url);
+    return `${u.hostname}:${u.port || 5432}`;
+  } catch {
+    return 'configured server';
+  }
+}
+
+/**
+ * Create the schema if it does not exist. `db` is any client exposing an async
+ * `query(text, params)` method (a pg Pool/Client or a PGlite instance).
  */
 export async function migrate(db) {
   await db.query(`
