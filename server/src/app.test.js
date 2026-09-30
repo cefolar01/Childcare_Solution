@@ -1,18 +1,25 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
+import { PGlite } from '@electric-sql/pglite';
 import { createApp } from './app.js';
-import { createDatabase } from './db.js';
+import { createStore } from './store.js';
+import { initDb } from './db.js';
 
-/** Spin up the app on an ephemeral port backed by an in-memory database. */
+/**
+ * Spin up the app on an ephemeral port backed by an in-process PGlite database
+ * (real Postgres compiled to WASM), so tests need no external DB server.
+ */
 async function startTestServer() {
-  const db = createDatabase(':memory:');
-  const app = createApp(db);
+  const db = new PGlite();
+  await initDb(db);
+  const app = createApp(createStore(db));
   const server = app.listen(0);
   await new Promise((r) => server.once('listening', r));
   const { port } = server.address();
   return {
     base: `http://127.0.0.1:${port}`,
-    close: () => new Promise((r) => server.close(r)),
+    close: () =>
+      new Promise((r) => server.close(r)).then(() => db.close()),
   };
 }
 
@@ -96,6 +103,27 @@ test('creating a child requires mandatory fields', async () => {
     assert.equal(good.status, 201);
     const { id } = await good.json();
     assert.ok(id);
+  } finally {
+    await srv.close();
+  }
+});
+
+test('deleting a child removes them and cascades attendance', async () => {
+  const srv = await startTestServer();
+  try {
+    const list = await (await fetch(`${srv.base}/api/children`)).json();
+    const child = list[0];
+
+    await fetch(`${srv.base}/api/children/${child.id}/checkin`, { method: 'POST' });
+
+    const del = await fetch(`${srv.base}/api/children/${child.id}`, {
+      method: 'DELETE',
+    });
+    assert.equal(del.status, 204);
+
+    const after = await (await fetch(`${srv.base}/api/children`)).json();
+    assert.equal(after.find((c) => c.id === child.id), undefined);
+    assert.equal(after.length, 2);
   } finally {
     await srv.close();
   }

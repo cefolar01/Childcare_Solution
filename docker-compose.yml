@@ -1,0 +1,20 @@
+services:
+  db:
+    image: postgres:16
+    container_name: childcare-db
+    environment:
+      POSTGRES_USER: childcare
+      POSTGRES_PASSWORD: childcare
+      POSTGRES_DB: childcare
+    ports:
+      - "5432:5432"
+    volumes:
+      - childcare_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U childcare -d childcare"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  childcare_pgdata:
