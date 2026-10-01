@@ -1,7 +1,11 @@
 import express from 'express';
 import cors from 'cors';
+import cookieParser from 'cookie-parser';
 import { existsSync } from 'node:fs';
 import { join } from 'node:path';
+import { createAuthStore } from './auth/store.js';
+import { mountAuthRoutes } from './auth/routes.js';
+import { mountProfileRoutes } from './auth/profileRoutes.js';
 
 /** Wrap an async route so rejected promises flow to Express error handling. */
 const wrap = (fn) => (req, res, next) => Promise.resolve(fn(req, res, next)).catch(next);
@@ -13,14 +17,28 @@ const wrap = (fn) => (req, res, next) => Promise.resolve(fn(req, res, next)).cat
  * When `clientDist` points at a built client bundle, the app also serves the
  * web UI (with SPA fallback) so the whole app runs as a single process.
  */
-export function createApp(store, clientDist) {
+export function createApp(store, clientDist, authStore) {
   const app = express();
-  app.use(cors());
-  app.use(express.json());
+  app.use(
+    cors({
+      origin: true,
+      credentials: true,
+    })
+  );
+  app.use(express.json({ limit: '100kb' }));
+  app.use(cookieParser());
+
+  const auth = authStore || createAuthStore(store.db);
+  // Expose for tests that need direct store access via app locals
+  app.locals.authStore = auth;
+  app.locals.store = store;
 
   app.get('/api/health', (_req, res) => {
     res.json({ status: 'ok', time: new Date().toISOString() });
   });
+
+  mountAuthRoutes(app, auth, wrap);
+  mountProfileRoutes(app, auth, wrap);
 
   app.get(
     '/api/children',

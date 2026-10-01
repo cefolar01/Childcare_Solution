@@ -24,6 +24,7 @@ function toChild(row) {
  */
 export function createStore(db) {
   return {
+    db,
     async listChildren() {
       const { rows } = await db.query(
         `SELECT c.*,
