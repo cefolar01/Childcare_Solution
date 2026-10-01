@@ -96,7 +96,56 @@ On Windows PowerShell, set it first with
 | `npm run db:down` | Stop the database container |
 | `npm run db:reset` | Drop the volume and start a fresh database |
 
-## API overview
+## Applicant authentication (WP-CC-AUTH-001 / 002 / 003)
+
+Portal applicants can **self-register** (email as username), enroll **TOTP** 2FA,
+sign in (password → TOTP → optional **90-day force password reset**), and land on
+**their demographic profile**.
+
+### Auth secrets (do not commit)
+
+| Variable | Purpose |
+| --- | --- |
+| `AUTH_SECRET` | Derives encryption for TOTP seeds and SSN at rest (min 16 chars). **Required in production.** Dev falls back to a local placeholder — set a real secret before any shared deploy. |
+
+Never put plaintext passwords, TOTP seeds, SSN values, or `AUTH_SECRET` in git,
+fixtures committed as secrets, Slack, or email. Tests use synthetic emails such as
+`applicant.demo.001@example.test` and synthetic SSN patterns (e.g. `000-00-0001`).
+
+### Password policy
+
+- Min 12 characters; upper, lower, digit, and special character required.
+- Passwords **force-reset every 90 days** at login (Rich-confirmed).
+- Session cookie `cc_session` is httpOnly. Interim Dev session TTL is **8 hours absolute**; idle-timeout preference remains an open question (not invented).
+
+### Applicant UI routes
+
+| Path | Purpose |
+| --- | --- |
+| `/register` | Self-register + TOTP enroll |
+| `/login` | Sign in → 2FA → (force reset if due) → profile |
+| `/profile` | Own demographic profile (post-login land) |
+| `/roster` | Existing staff roster scaffold (dev convenience) |
+
+### Auth / profile API
+
+| Method | Path | Purpose |
+| --- | --- | --- |
+| `POST` | `/api/auth/register` | Start registration |
+| `GET` | `/api/auth/2fa/setup` | TOTP otpauth URI (enrollment token) |
+| `POST` | `/api/auth/2fa/enroll` | Verify TOTP; complete registration |
+| `POST` | `/api/auth/login` | Email + password → 2FA challenge |
+| `POST` | `/api/auth/2fa/verify-login` | Complete 2FA or require force reset |
+| `POST` | `/api/auth/password/force-reset` | 90-day reset then session |
+| `POST` | `/api/auth/logout` | Revoke session |
+| `GET` | `/api/auth/me` | Current applicant |
+| `GET` | `/api/profile` | Own demographics (SSN masked) |
+| `PUT` | `/api/profile` | Update demographics |
+| `GET` | `/api/profile/:id` | Own id only; others → 403 |
+
+Household member / child listing on profile is **deferred** (open question on WP-CC-AUTH-003).
+
+## API overview (roster)
 
 | Method | Path | Purpose |
 | --- | --- | --- |
@@ -110,9 +159,10 @@ On Windows PowerShell, set it first with
 
 ## Data
 
-The schema (`children`, `attendance`) is applied on startup and demo children
-are seeded into an empty database. Configure storage with `DATABASE_URL`
-(defaults to embedded PGlite at `data/pglite/`) and the API port with `PORT`.
+The schema (`children`, `attendance`, `applicants`, auth/profile/audit tables) is
+applied on startup and demo children are seeded into an empty database. Configure
+storage with `DATABASE_URL` (defaults to embedded PGlite at `data/pglite/`) and
+the API port with `PORT`.
 
 ## Cloud Agent environment
 

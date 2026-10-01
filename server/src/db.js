@@ -98,6 +98,68 @@ export async function migrate(db) {
       check_out TIMESTAMPTZ
     );
   `);
+
+  // Applicant auth (WP-CC-AUTH-001 / 002 / 003)
+  await db.query(`
+    CREATE TABLE IF NOT EXISTS applicants (
+      id SERIAL PRIMARY KEY,
+      email TEXT NOT NULL UNIQUE,
+      password_hash TEXT NOT NULL,
+      password_changed_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+      totp_secret_enc TEXT,
+      totp_enrolled_at TIMESTAMPTZ,
+      registration_complete BOOLEAN NOT NULL DEFAULT FALSE,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+    );
+  `);
+  await db.query(`
+    CREATE TABLE IF NOT EXISTS auth_challenges (
+      id TEXT PRIMARY KEY,
+      applicant_id INTEGER NOT NULL REFERENCES applicants(id) ON DELETE CASCADE,
+      purpose TEXT NOT NULL,
+      expires_at TIMESTAMPTZ NOT NULL,
+      consumed_at TIMESTAMPTZ,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+    );
+  `);
+  await db.query(`
+    CREATE TABLE IF NOT EXISTS auth_sessions (
+      id TEXT PRIMARY KEY,
+      applicant_id INTEGER NOT NULL REFERENCES applicants(id) ON DELETE CASCADE,
+      expires_at TIMESTAMPTZ NOT NULL,
+      revoked_at TIMESTAMPTZ,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+    );
+  `);
+  await db.query(`
+    CREATE TABLE IF NOT EXISTS applicant_profiles (
+      applicant_id INTEGER PRIMARY KEY REFERENCES applicants(id) ON DELETE CASCADE,
+      first_name TEXT,
+      last_name TEXT,
+      mailing_address1 TEXT,
+      mailing_address2 TEXT,
+      mailing_city TEXT,
+      mailing_state TEXT,
+      mailing_zip TEXT,
+      physical_address1 TEXT,
+      physical_address2 TEXT,
+      physical_city TEXT,
+      physical_state TEXT,
+      physical_zip TEXT,
+      ssn_enc TEXT,
+      date_of_birth TEXT,
+      updated_at TIMESTAMPTZ
+    );
+  `);
+  await db.query(`
+    CREATE TABLE IF NOT EXISTS audit_events (
+      id SERIAL PRIMARY KEY,
+      applicant_id INTEGER,
+      action TEXT NOT NULL,
+      detail TEXT,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+    );
+  `);
 }
 
 /** Insert demo children on first run (no-op if any children already exist). */

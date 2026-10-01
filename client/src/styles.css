@@ -261,3 +261,144 @@ form select:focus {
 .muted {
   color: var(--muted);
 }
+
+.banner.ok {
+  background: #ecfdf5;
+  color: #047857;
+  border: 1px solid #a7f3d0;
+}
+
+.grid3 {
+  display: grid;
+  grid-template-columns: 1.4fr 0.6fr 0.8fr;
+  gap: 12px;
+}
+
+@media (max-width: 720px) {
+  .grid2,
+  .grid3 {
+    grid-template-columns: 1fr;
+  }
+}
+
+.auth-page {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 32px 16px;
+  background:
+    radial-gradient(circle at top left, rgba(79, 70, 229, 0.12), transparent 40%),
+    var(--bg);
+}
+
+.auth-panel {
+  width: 100%;
+  max-width: 460px;
+  background: var(--card);
+  border-radius: 18px;
+  padding: 28px 28px 22px;
+  box-shadow: var(--shadow);
+}
+
+.eyebrow {
+  margin: 0 0 6px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--brand);
+}
+
+.auth-panel h1,
+.profile-header h1 {
+  margin: 0 0 8px;
+  font-size: 26px;
+}
+
+.lede {
+  margin: 0 0 18px;
+  color: var(--muted);
+  line-height: 1.45;
+}
+
+.auth-form {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.hint {
+  font-size: 13px;
+  color: var(--muted);
+  margin: 0 0 12px;
+  line-height: 1.4;
+}
+
+.hint.break {
+  word-break: break-all;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 11px;
+}
+
+.auth-footer {
+  margin: 18px 0 0;
+  font-size: 14px;
+  color: var(--muted);
+}
+
+.success-copy {
+  color: var(--green);
+  font-weight: 600;
+}
+
+.profile-page {
+  max-width: 760px;
+}
+
+.profile-header {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  align-items: flex-start;
+  margin-bottom: 8px;
+}
+
+.profile-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.profile-form {
+  background: var(--card);
+  border-radius: 16px;
+  padding: 22px 24px 28px;
+  box-shadow: var(--shadow);
+  margin-top: 12px;
+}
+
+.profile-form section {
+  margin-bottom: 22px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--border);
+}
+
+.profile-form section h2 {
+  margin: 0 0 12px;
+  font-size: 16px;
+}
+
+.field-error {
+  display: block;
+  margin-top: 4px;
+  color: #b91c1c;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+a.btn {
+  display: inline-flex;
+  align-items: center;
+  text-decoration: none;
+}
